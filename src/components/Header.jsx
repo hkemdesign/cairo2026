@@ -13,12 +13,12 @@ export default function Header() {
         </div>
       </div>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-title)' }}>مرحباً بك في القاهرة</h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>لوحة التحكم الشاملة لخطة إجازتك</p>
         </div>
-        <div style={{ backgroundColor: 'var(--accent-yellow-light)', color: 'var(--text-title)', border: '1px solid var(--text-title)', padding: '4px 12px', borderRadius: '30px', fontSize: '12px', fontWeight: 900 }}>
+        <div style={{ backgroundColor: 'var(--accent-yellow-light)', color: 'var(--text-title)', border: '1px solid var(--text-title)', padding: '4px 12px', borderRadius: '30px', fontSize: '12px', fontWeight: 900, whiteSpace: 'nowrap' }}>
           تحديث فوري نشط
         </div>
       </div>

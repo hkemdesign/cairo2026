@@ -176,7 +176,6 @@ export default function FoodGuideSection() {
       {selectedFood && (
         <div className="food-modal active" id="food-detail-modal" onClick={closeFoodPopup} style={{ display: 'flex', opacity: 1 }}>
           <div className="food-modal-content" onClick={(e) => e.stopPropagation()}>
-            <img className="food-modal-img" src={selectedFood.photo} alt={selectedFood.name} />
             <div className="food-modal-body">
               <div className="food-modal-title">{selectedFood.name}</div>
               <div className="food-modal-slang">الاسم المحلي: {selectedFood.slang}</div>

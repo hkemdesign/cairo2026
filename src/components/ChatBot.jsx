@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 
 export default function ChatBot({ budgetData, exchangeRate }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [apiKey, setApiKey] = useState(() => {
+    return localStorage.getItem('gemini_api_key') || '';
+  });
+  const [tempKey, setTempKey] = useState(apiKey);
+  
   const [messages, setMessages] = useState([
     {
       isUser: false,
@@ -28,7 +34,7 @@ export default function ChatBot({ budgetData, exchangeRate }) {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = (text) => {
+  const handleSend = async (text) => {
     const query = text.trim();
     if (!query) return;
 
@@ -37,12 +43,96 @@ export default function ChatBot({ budgetData, exchangeRate }) {
     setInputVal('');
     setIsTyping(true);
 
-    // Simulate bot response with dynamic typing indicator
-    setTimeout(() => {
-      setIsTyping(false);
-      const botResponse = getLocalResponse(query);
-      setMessages(prev => [...prev, { isUser: false, text: botResponse }]);
-    }, 600);
+    if (apiKey) {
+      // Use Live Gemini 2.5 Flash API
+      try {
+        // Build chat history for Gemini API (filtering out system greeting)
+        const chatHistoryForApi = messages
+          .filter((_, idx) => idx > 0) // Skip welcome message
+          .slice(-6) // Take last 6 messages
+          .map(msg => ({
+            role: msg.isUser ? 'user' : 'model',
+            parts: [{ text: msg.text.replace(/<[^>]*>/g, '') }] // Strip HTML
+          }));
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                ...chatHistoryForApi,
+                {
+                  role: 'user',
+                  parts: [{ text: query }]
+                }
+              ],
+              systemInstruction: {
+                parts: [{
+                  text: `أنت 'دليل'، مساعد ذكي ومستشار سياحي خبير ومبسط بالسياحة والسفر في القاهرة لمساعدة السياح (خاصة القادمين من الخليج كالمملكة العربية السعودية) للتخطيط لرحلتهم في القاهرة 2026.
+                  
+                  إليك تفاصيل الرحلة المعتمدة لتستخدمها بدقة عند الحاجة:
+                  • عدد الأيام: 6 أيام / 5 ليالٍ. الطقس في سبتمبر دافئ نهاراً (28-32م) ومعتدل ليلاً.
+                  • اليوم 1: الوصول لمطار القاهرة الدولي، الاستقرار بالفندق (الزمالك أو وسط البلد)، مساءً رحلة فلوكة نيلية وعشاء.
+                  • اليوم 2: صباحاً أهرامات الجيزة وأبو الهول، ظهراً المتحف المصري الكبير (GEM)، الغداء كباب وكفتة مشويات الجيزة.
+                  • اليوم 3: صباحاً قلعة صلاح الدين ومسجد محمد علي، ظهراً مجمع الأديان (الكنيسة المعلقة ومسجد عمرو بن العاص) والمتحف القومي للحضارة (المومياوات الملكية)، عصراً حديقة الأزهر لمشاهدة الغروب.
+                  • اليوم 4: صباحاً تمشية شارع المعز التاريخي، الغداء كشري أبو طارق بوسط البلد، مساءً بازار خان الخليلي ومقهى الفيشاوي لشرب شاي النعناع.
+                  • اليوم 5: صباحاً إفطار بالزمالك، ظهراً برج القاهرة لمشاهدة البانوراما، مساءً تمشية كوبري قصر النيل (أسدي قصر النيل) وعشاء فاخر.
+                  • اليوم 6: صباحاً شراء حلويات شرقية (العبد، تسيباس) والمانجو والفطير المشلتت، ظهراً حزم الحقائب والمغادرة للمطار.
+                  
+                  تفاصيل المأكولات والمطاعم الموصى بها:
+                  • الفطور: الفلافل المصرية (الطعمية) والفول المدمس بالسمن البلدي (مطاعم: أرابياتا، زيزو، التابعي الدمياطي).
+                  • الغداء/العشاء: الكشري (أبو طارق، التحرير)، المشويات (صبحي كابر، الرفاعي، قصر الكبابجي)، الملوخية بالدجاج (أبو السيد بالزمالك، صبحي كابر)، الأسماك (البوري المشوي بالردة، أرز صيادية بني - مطاعم: البرج، قدورة، سمكمك).
+                  • الحلويات: أم علي بالقشطة والمكسرات، البسبوسة بالسمن البلدي (العبد، تسيباس، قويدر).
+                  
+                  إرشادات الأمان وتجنب الاحتيال:
+                  • الأهرامات: تجنب التعامل مع عارضي ركوب الخيل والجمال غير الرسميين (الخراتية)، حجز التذاكر رسمياً، الاتفاق المسبق على السعر بدقة (المتوسط 200-300 جنيه).
+                  • التسوق: ثقافة الفصال في خان الخليلي ضرورية (التفاوض للحصول على نصف السعر المعروض).
+                  • المواصلات: الاعتماد بالدرجة الأولى على تطبيقات أوبر (Uber) أو كابتن/كريم لتجنب جدال الأسعار والتاكسي الأبيض. المترو (الخط الثالث الأخضر) رائع وسريع ومكيف.
+                  • المياه: تجنب شرب مياه الحنفية والاعتماد كلياً على المياه المعدنية المغلقة. البقشيش (الإكرامية) متداول للعمال والخدمات البسيطة (5-20 جنيه).
+                  
+                  أجب باللغة العربية بأسلوب ودود ومبسط وواضح ولطيف. لا تذكر تفاصيل تقنية مثل HTML أو البرمجة. ركز فقط على القاهرة والسياحة.`
+                }]
+              }
+            })
+          }
+        );
+
+        setIsTyping(false);
+
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            // Simple markdown line breaks to HTML converter
+            const formatted = text
+              .replace(/\n/g, '<br>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            setMessages(prev => [...prev, { isUser: false, text: formatted }]);
+            return;
+          }
+        }
+        throw new Error('API response format error');
+      } catch (err) {
+        console.warn('Gemini API call failed, using offline fallback QA.', err);
+        const botResponse = getLocalResponse(query);
+        setMessages(prev => [
+          ...prev, 
+          { isUser: false, text: `⚠️ <em>فشل الاتصال بـ Gemini API، تم تشغيل الرد التلقائي دون اتصال:</em><br><br>${botResponse}` }
+        ]);
+      }
+    } else {
+      // Use Offline Fallback QA Search Engine
+      setTimeout(() => {
+        setIsTyping(false);
+        const botResponse = getLocalResponse(query);
+        setMessages(prev => [...prev, { isUser: false, text: botResponse }]);
+      }, 600);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -51,20 +141,32 @@ export default function ChatBot({ budgetData, exchangeRate }) {
     }
   };
 
+  const saveApiKey = () => {
+    const key = tempKey.trim();
+    localStorage.setItem('gemini_api_key', key);
+    setApiKey(key);
+    setIsSettingsOpen(false);
+  };
+
+  const clearApiKey = () => {
+    localStorage.removeItem('gemini_api_key');
+    setApiKey('');
+    setTempKey('');
+    setIsSettingsOpen(false);
+  };
+
   // Predefined suggestion chips
   const suggestions = [
     'الأهرامات والجمال',
     'كيف أتنقل؟',
     'أشهر أكلة شعبية',
     'نصائح الأمان',
-    'ميزانية الرحلة'
+    'برنامج الرحلة'
   ];
 
   // Offline QA Search Engine based on Wiki & HTML
   const getLocalResponse = (query) => {
     query = query.trim().toLowerCase();
-    
-    // Remove Arabic diacritics & common letters for matching
     const cleanQuery = query
         .replace(/[أإآ]/g, 'ا')
         .replace(/ة/g, 'ه')
@@ -125,7 +227,7 @@ export default function ChatBot({ budgetData, exchangeRate }) {
 
     if (cleanQuery.includes('حلي') || cleanQuery.includes('حلويات') || cleanQuery.includes('ام علي') || cleanQuery.includes('بسبوسه') || cleanQuery.includes('العبد')) {
         return `<b>الحلويات والحلويات الشرقية بمصر:</b><br>
-        • <b>أم علي:</b> طاجن دافئ من رقائق العجين المذكورة مع الحليب الساخن والمكسرات والقشطة والزبيب.<br>
+        • <b>أم علي:</b> طاجن دافئ من رقائق العجين المخبوزة مع الحليب الساخن والمكسرات والقشطة والزبيب.<br>
         • <b>البسبوسة:</b> حلوى السميد المبللة بالقطر الدافئ والمخبوزة بالسمن البلدي.<br>
         • <b>أشهر الأماكن الموصى بها:</b> حلواني العبد بوسط البلد، حلواني المالكي، وحلواني تسيباس.<br>
         • <b>شاي النعناع:</b> لا تفوت شرب شاي بالنعناع في مقهى الفيشاوي التاريخي بخان الخليلي.`;
@@ -179,69 +281,146 @@ export default function ChatBot({ budgetData, exchangeRate }) {
 
   return (
     <>
-      {/* Floating Launcher Button */}
-      <div className="chat-launcher" onClick={() => setIsOpen(true)}>
-        <i className="hgi-stroke hgi-chat-bot"></i>
-        <span>اسأل دليل القاهرة</span>
+      {/* Floating Launcher Button with correct stylesheet styling classes */}
+      <div className="daleel-launcher" onClick={() => setIsOpen(true)}>
+        <div className="daleel-launcher-info">
+          <div className="daleel-avatar">
+            <i className="hgi-stroke hgi-chat-bot"></i>
+            <span className="daleel-status-dot"></span>
+          </div>
+          <div>
+            <div className="daleel-launcher-title">مساعدك الذكي (دليل)</div>
+            <div className="daleel-launcher-desc">{apiKey ? 'Gemini 2.5 Flash نشط 🟢' : 'الوضع الذكي دون اتصال 🌐'}</div>
+          </div>
+        </div>
+        <i className="hgi-stroke hgi-arrow-left-01"></i>
       </div>
 
       {/* Backdrop */}
-      {isOpen && (
-        <div className="chat-backdrop active" onClick={() => setIsOpen(false)}></div>
-      )}
+      <div 
+        className={`chat-sheet-backdrop ${isOpen ? 'active' : ''}`} 
+        onClick={() => { setIsOpen(false); setIsSettingsOpen(false); }}
+      ></div>
 
       {/* Chat Sheet Sidebar */}
       <div className={`chat-sheet ${isOpen ? 'active' : ''}`} id="chat-sheet">
         <div className="chat-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <i className="hgi-stroke hgi-chat-bot" style={{ fontSize: '24px', color: 'var(--text-title)' }}></i>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '15px' }}>دليل القاهرة الذكي</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>مساعدك للتنقل والتخطيط والأمان</div>
+          <div className="daleel-avatar" style={{ marginRight: 0, marginLeft: '10px', flexShrink: 0 }}>
+            <i className="hgi-stroke hgi-chat-bot"></i>
+            <span className="daleel-status-dot"></span>
+          </div>
+          <div className="chat-header-info">
+            <div className="chat-header-title">دليل القاهرة الذكي</div>
+            <div className="chat-header-subtitle">
+              {apiKey ? 'Gemini 2.5 Flash متصل نشط' : 'الوضع المحلي (اضغط الترس للتفعيل)'}
             </div>
           </div>
-          <button className="chat-close-btn" onClick={() => setIsOpen(false)}>
-            <i className="hgi-stroke hgi-cancel-01"></i>
-          </button>
-        </div>
-
-        {/* Messages */}
-        <div className="chat-messages" id="chat-messages-container">
-          {messages.map((msg, index) => (
-            <div key={index} className={`chat-bubble ${msg.isUser ? 'user' : 'bot'}`} dangerouslySetInnerHTML={{ __html: msg.text }}></div>
-          ))}
-          {isTyping && (
-            <div className="chat-bubble bot" id="typing-indicator">
-              جاري البحث في دليل القاهرة...
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Suggestion Chips */}
-        <div className="chat-suggestions">
-          {suggestions.map((sug, index) => (
-            <button key={index} className="suggestion-chip" onClick={() => handleSend(sug)}>
-              {sug}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button 
+              className="chat-close-btn" 
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)} 
+              title="إعدادات مفتاح API"
+              style={{ color: isSettingsOpen ? 'var(--text-title)' : 'var(--text-primary)' }}
+            >
+              <i className="hgi-stroke hgi-settings-01"></i>
             </button>
-          ))}
+            <button className="chat-close-btn" onClick={() => { setIsOpen(false); setIsSettingsOpen(false); }}>
+              <i className="hgi-stroke hgi-cancel-01"></i>
+            </button>
+          </div>
         </div>
 
-        {/* Input Area */}
-        <div className="chat-input-area">
-          <div className="chat-input-wrapper">
-            <input 
-              type="text" 
-              placeholder="اكتب سؤالك هنا عن معالم مصر أو الأكلات..." 
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              onKeyDown={handleKeyPress}
-            />
+        {/* Settings view for Gemini API Key */}
+        {isSettingsOpen ? (
+          <div className="chat-messages" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: 'var(--bg-color)' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-title)' }}>
+              إعدادات الاتصال الذكي بـ Gemini
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+              لتفعيل الردود الذكية اللانهائية والمحادثات المتقدمة، يمكنك إنشاء مفتاح API مجاني لـ Gemini من Google AI Studio ولصقه هنا. يتم حفظ المفتاح محلياً في متصفحك فقط.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                Gemini API Key (مفتاح الاتصال)
+              </label>
+              <input 
+                type="password" 
+                placeholder="AIzaSy..." 
+                value={tempKey}
+                onChange={(e) => setTempKey(e.target.value)}
+                style={{ padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 'none', fontFamily: 'monospace' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <button 
+                className="btn" 
+                style={{ flex: 1, padding: '10px', background: 'var(--text-title)', color: '#FFFFFF', border: 'none', borderRadius: '10px', fontWeight: 800 }} 
+                onClick={saveApiKey}
+              >
+                حفظ المفتاح
+              </button>
+              <button 
+                className="btn" 
+                style={{ padding: '10px', background: '#E24A4A', color: '#FFFFFF', border: 'none', borderRadius: '10px', fontWeight: 800 }} 
+                onClick={clearApiKey}
+              >
+                حذف
+              </button>
+            </div>
+            <a 
+              href="https://aistudio.google.com/" 
+              target="_blank" 
+              rel="noreferrer" 
+              style={{ fontSize: '12px', color: 'var(--text-title)', textDecoration: 'underline', textAlign: 'center', marginTop: '10px', fontWeight: 700 }}
+            >
+              احصل على مفتاح مجاني من Google AI Studio
+            </a>
           </div>
-          <button className="chat-send-btn" onClick={() => handleSend(inputVal)}>
-            <i className="hgi-stroke hgi-sent"></i>
-          </button>
-        </div>
+        ) : (
+          <>
+            {/* Messages */}
+            <div className="chat-messages" id="chat-messages-container">
+              {messages.map((msg, index) => (
+                <div 
+                  key={index} 
+                  className={`chat-bubble ${msg.isUser ? 'user' : 'bot'}`} 
+                  dangerouslySetInnerHTML={{ __html: msg.text }}
+                ></div>
+              ))}
+              {isTyping && (
+                <div className="chat-bubble bot" id="typing-indicator">
+                  جاري البحث والتحليل الذكي...
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Suggestion Chips */}
+            <div className="chat-suggestions">
+              {suggestions.map((sug, index) => (
+                <button key={index} className="suggestion-chip" onClick={() => handleSend(sug)}>
+                  {sug}
+                </button>
+              ))}
+            </div>
+
+            {/* Input Area */}
+            <div className="chat-input-area">
+              <div className="chat-input-wrapper">
+                <input 
+                  type="text" 
+                  placeholder="اكتب سؤالك هنا عن معالم مصر أو الأكلات..." 
+                  value={inputVal}
+                  onChange={(e) => setInputVal(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                />
+              </div>
+              <button className="chat-send-btn" onClick={() => handleSend(inputVal)}>
+                <i className="hgi-stroke hgi-sent"></i>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

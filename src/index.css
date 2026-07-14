@@ -52,17 +52,19 @@
             box-shadow: 0 0 40px rgba(0,0,0,0.06);
             padding-bottom: 90px; /* Space for Daleel Chat launcher */
             transition: max-width 0.3s ease;
+            overflow-x: hidden; /* Prevent horizontal scroll bugs on mobile */
         }
 
         /* Desktop & Tablet Layout Enhancements */
         @media (min-width: 768px) {
             .app-container {
-                max-width: 1100px;
+                max-width: 90%;
                 margin: 24px auto;
                 border-radius: var(--border-radius);
                 box-shadow: 0 20px 50px rgba(0,0,0,0.08);
                 min-height: auto;
                 border: 1px solid var(--border-color);
+                overflow-x: visible; /* Restore overflow on desktop */
             }
 
             .main-content-grid {
@@ -85,6 +87,12 @@
                 gap: 20px;
                 position: sticky;
                 top: 24px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .app-container {
+                max-width: 1360px; /* Real dashboard layout size */
             }
         }
 
@@ -130,10 +138,22 @@
         }
 
         .header-overlay h1 {
-            font-size: 36px; /* Grand primary title */
+            font-size: 24px; /* Reduced for mobile */
             font-weight: 900;
             margin-bottom: 8px;
             color: #FFFFFF !important;
+        }
+
+        @media (min-width: 480px) {
+            .header-overlay h1 {
+                font-size: 28px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .header-overlay h1 {
+                font-size: 36px;
+            }
         }
 
         .header-overlay p {
