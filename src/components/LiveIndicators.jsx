@@ -11,24 +11,32 @@ export default function LiveIndicators({ exchangeRate, weatherData, setWeatherDa
     desc: 'مساء القاهرة الساهر والقريب',
   });
 
-  // Clock effect
+  // Currency Converter states
+  const [sarInput, setSarInput] = useState('');
+  const [egpInput, setEgpInput] = useState('');
+
+  // Clock effect with mathematical cairoHour to avoid browser locale formatting bugs
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      // Formatter for Cairo Local Time
-      const timeOptions = {
+      
+      // Calculate local hour in Cairo (UTC+3)
+      const cairoHour = (now.getUTCHours() + 3) % 24;
+
+      // Format time in English numbers (Western numerals)
+      const timeStr = now.toLocaleTimeString('en-US', {
         timeZone: 'Africa/Cairo',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
         hour12: true,
-      };
-      setCairoTime(now.toLocaleTimeString('ar-EG', timeOptions));
+      });
 
-      // Get hours in Cairo timezone (24h format)
-      const hourOptions = { timeZone: 'Africa/Cairo', hour: 'numeric', hour12: false };
-      const cairoHour = parseInt(now.toLocaleTimeString('en-US', hourOptions));
+      // Translate AM/PM to Arabic ص/م but keep English numerals
+      const formattedTime = timeStr.replace('AM', 'ص').replace('PM', 'م');
+      setCairoTime(formattedTime);
 
+      // Change time card theme based on Cairo hour phase
       if (cairoHour >= 6 && cairoHour < 12) {
         // Morning (6 AM - 11:59 AM)
         setTimeState({
@@ -105,12 +113,38 @@ export default function LiveIndicators({ exchangeRate, weatherData, setWeatherDa
     };
 
     fetchWeather();
-    // Refresh weather every 10 minutes
     const interval = setInterval(fetchWeather, 600000);
     return () => clearInterval(interval);
   }, [setWeatherData]);
 
-  // Determine temperature gradient scale and label
+  // Currency Converter logic
+  const handleSarChange = (val) => {
+    setSarInput(val);
+    if (val === '') {
+      setEgpInput('');
+      return;
+    }
+    const num = parseFloat(val) || 0;
+    setEgpInput(Math.round(num * exchangeRate).toString());
+  };
+
+  const handleEgpChange = (val) => {
+    setEgpInput(val);
+    if (val === '') {
+      setSarInput('');
+      return;
+    }
+    const num = parseFloat(val) || 0;
+    setSarInput((Math.round((num / exchangeRate) * 10) / 10).toString());
+  };
+
+  const handleSwapValues = () => {
+    const temp = sarInput;
+    setSarInput(egpInput);
+    setEgpInput(temp);
+  };
+
+  // Determine temperature gradient scale
   const getTempScale = (temp) => {
     if (temp <= 15) return { color: '#00D4FF', percentage: 20, status: 'بارد' };
     if (temp <= 25) return { color: '#00E676', percentage: 50, status: 'معتدل' };
@@ -128,7 +162,7 @@ export default function LiveIndicators({ exchangeRate, weatherData, setWeatherDa
       </div>
       
       <div className="indicators-grid-container">
-        {/* Card 1: Cairo Local Time (Ticking) */}
+        {/* Card 1: Cairo Local Time (Ticking & English Numbers) */}
         <div className="premium-indicator-card time-card-state" style={{ background: timeState.gradient, color: timeState.textColor }}>
           <div className="premium-card-header">
             <i className="hgi-stroke hgi-clock-01" style={{ color: timeState.iconColor }}></i>
@@ -155,7 +189,6 @@ export default function LiveIndicators({ exchangeRate, weatherData, setWeatherDa
             </span>
           </div>
           <div className="premium-card-desc">{weatherData.desc} • ليل معتدل 18°</div>
-          {/* Temperature visual progress gradient line */}
           <div className="temp-gradient-bar-wrapper">
             <div className="temp-gradient-bar">
               <div 
@@ -180,6 +213,44 @@ export default function LiveIndicators({ exchangeRate, weatherData, setWeatherDa
             <span className="premium-currency-tag">SAR / EGP</span>
           </div>
           <div className="premium-card-desc">لكل 1 ريال سعودي (محدث تلقائياً)</div>
+        </div>
+      </div>
+
+      {/* Currency Converter moved under the Live Indicators Grid (Full Width) */}
+      <div className="section-title" style={{ margin: '24px 20px 12px 20px' }}>
+        <span>محول العملات التفاعلي</span>
+        <i className="hgi-stroke hgi-exchange-01"></i>
+      </div>
+      <div className="card" style={{ margin: '0 20px 24px 20px' }}>
+        <div className="converter-flex-container">
+          <div className="converter-input-col">
+            <span className="converter-label">ريال سعودي (SAR)</span>
+            <input 
+              type="number" 
+              placeholder="0"
+              value={sarInput} 
+              onChange={(e) => handleSarChange(e.target.value)}
+              className="converter-field"
+            />
+          </div>
+          
+          <button 
+            onClick={handleSwapValues} 
+            className="converter-swap-btn"
+          >
+            <i className="hgi-stroke hgi-exchange-01"></i>
+          </button>
+
+          <div className="converter-input-col">
+            <span className="converter-label">جنيه مصري (EGP)</span>
+            <input 
+              type="number" 
+              placeholder="0"
+              value={egpInput} 
+              onChange={(e) => handleEgpChange(e.target.value)}
+              className="converter-field"
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -7,7 +7,6 @@ export default function ChatBot({ budgetData, exchangeRate }) {
     return localStorage.getItem('gemini_api_key') || '';
   });
   const [tempKey, setTempKey] = useState(apiKey);
-  
   const [messages, setMessages] = useState([
     {
       isUser: false,
@@ -46,7 +45,6 @@ export default function ChatBot({ budgetData, exchangeRate }) {
     if (apiKey) {
       // Use Live Gemini 2.5 Flash API
       try {
-        // Build chat history for Gemini API (filtering out system greeting)
         const chatHistoryForApi = messages
           .filter((_, idx) => idx > 0) // Skip welcome message
           .slice(-6) // Take last 6 messages
@@ -80,12 +78,12 @@ export default function ChatBot({ budgetData, exchangeRate }) {
                   • اليوم 2: صباحاً أهرامات الجيزة وأبو الهول، ظهراً المتحف المصري الكبير (GEM)، الغداء كباب وكفتة مشويات الجيزة.
                   • اليوم 3: صباحاً قلعة صلاح الدين ومسجد محمد علي، ظهراً مجمع الأديان (الكنيسة المعلقة ومسجد عمرو بن العاص) والمتحف القومي للحضارة (المومياوات الملكية)، عصراً حديقة الأزهر لمشاهدة الغروب.
                   • اليوم 4: صباحاً تمشية شارع المعز التاريخي، الغداء كشري أبو طارق بوسط البلد، مساءً بازار خان الخليلي ومقهى الفيشاوي لشرب شاي النعناع.
-                  • اليوم 5: صباحاً إفطار بالزمالك، ظهراً برج القاهرة لمشاهدة البانوراما، مساءً تمشية كوبري قصر النيل (أسدي قصر النيل) وعشاء فاخر.
+                  • اليوم 5: صباحاً إفطار بالزمالك، برج القاهرة لمشاهدة البانوراما، مساءً تمشية كوبري قصر النيل (أسدي قصر النيل) وعشاء فاخر.
                   • اليوم 6: صباحاً شراء حلويات شرقية (العبد، تسيباس) والمانجو والفطير المشلتت، ظهراً حزم الحقائب والمغادرة للمطار.
                   
                   تفاصيل المأكولات والمطاعم الموصى بها:
                   • الفطور: الفلافل المصرية (الطعمية) والفول المدمس بالسمن البلدي (مطاعم: أرابياتا، زيزو، التابعي الدمياطي).
-                  • الغداء/العشاء: الكشري (أبو طارق، التحرير)، المشويات (صبحي كابر، الرفاعي، قصر الكبابجي)، الملوخية بالدجاج (أبو السيد بالزمالك، صبحي كابر)، الأسماك (البوري المشوي بالردة، أرز صيادية بني - مطاعم: البرج، قدورة، سمكمك).
+                  • الغداء/العشاء: الكشري (أبو طارق، التحرير)، المشويات (صبحي كابر، الرفاعي، قصر الكبابجي)، الحواوشي (حواوشي الربيع، الرفاعي)، الفتة المصرية (أبو السيد)، الملوخية بالدجاج (أبو السيد بالزمالك، صبحي كابر)، الأسماك (البوري المشوي بالردة، أرز صيادية بني - مطاعم: البرج، قدورة، سمكمك).
                   • الحلويات: أم علي بالقشطة والمكسرات، البسبوسة بالسمن البلدي (العبد، تسيباس، قويدر).
                   
                   إرشادات الأمان وتجنب الاحتيال:
@@ -107,7 +105,6 @@ export default function ChatBot({ budgetData, exchangeRate }) {
           const data = await response.json();
           const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text) {
-            // Simple markdown line breaks to HTML converter
             const formatted = text
               .replace(/\n/g, '<br>')
               .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -219,13 +216,13 @@ export default function ChatBot({ budgetData, exchangeRate }) {
 
     if (cleanQuery.includes('سمك') || cleanQuery.includes('سي فود') || cleanQuery.includes('بحر') || cleanQuery.includes('صياديه') || cleanQuery.includes('بوري') || cleanQuery.includes('قدوره')) {
         return `<b>المأكولات البحرية والأسماك بالقاهرة:</b><br>
-        • <b>سمك البوري المشوي بالردة:</b> سمك بوري يشوى بنخالة القمح على صاج ساخن جداً ويسقى بتتبيلة الخل والليمون والثوم.<br>
+        • <b>سمك البوري المشوي بالردة:</b> سمك بوري يشوى بنخالة القمح على صاج ساخن جداً ويسقى بتتبيلة الخل والليمون والثوم والملح.<br>
         • <b>أرز الصيادية البني:</b> أرز مطبوخ بالبصل المحمر الغامق يقدم مع سمك بلطي مقلي ومقرمش.<br>
         • <b>أشهر الأماكن الموصى بها:</b> مطاعم أسماك البرج (مدينة نصر)، قدورة للأسماك (الجيزة)، وسمكمك (المهندسين).<br>
         • <b>السعر التقريبي:</b> 100 - 280 جنيه مصري (≈ 10 - 25 ريال سعودي).`;
     }
 
-    if (cleanQuery.includes('حلي') || cleanQuery.includes('حلويات') || cleanQuery.includes('ام علي') || cleanQuery.includes('بسبوسه') || cleanQuery.includes('العبد')) {
+    if (cleanQuery.includes('حلي') || cleanQuery.includes('حلويات') || cleanQuery.includes('ام علي') || cleanQuery.includes('بسبوه') || cleanQuery.includes('العبد')) {
         return `<b>الحلويات والحلويات الشرقية بمصر:</b><br>
         • <b>أم علي:</b> طاجن دافئ من رقائق العجين المخبوزة مع الحليب الساخن والمكسرات والقشطة والزبيب.<br>
         • <b>البسبوسة:</b> حلوى السميد المبللة بالقطر الدافئ والمخبوزة بالسمن البلدي.<br>
@@ -281,7 +278,7 @@ export default function ChatBot({ budgetData, exchangeRate }) {
 
   return (
     <>
-      {/* Floating Launcher Button with correct stylesheet styling classes */}
+      {/* Floating Launcher Button */}
       <div className="daleel-launcher" onClick={() => setIsOpen(true)}>
         <div className="daleel-launcher-info">
           <div className="daleel-avatar">
@@ -337,7 +334,7 @@ export default function ChatBot({ budgetData, exchangeRate }) {
               إعدادات الاتصال الذكي بـ Gemini
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-              لتفعيل الردود الذكية اللانهائية والمحادثات المتقدمة، يمكنك إنشاء مفتاح API مجاني لـ Gemini من Google AI Studio ولصقه هنا. يتم حفظ المفتاح محلياً في متصفحك فقط.
+              لتفعيل الردود الذكية المتقدمة، يمكنك إنشاء مفتاح API مجاني لـ Gemini من Google AI Studio ولصقه هنا. يتم حفظ المفتاح محلياً في متصفحك فقط لتفادي كشفه علناً.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>

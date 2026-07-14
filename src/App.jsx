@@ -64,7 +64,6 @@ export default function App() {
       <div className="main-content-grid">
         <div className="column-itinerary">
           <ItinerarySection />
-          <FoodGuideSection />
         </div>
 
         <div className="column-sidebar">
@@ -74,6 +73,11 @@ export default function App() {
             exchangeRate={exchangeRate} 
           />
         </div>
+      </div>
+
+      {/* Food Guide Section as the last section spanning full width */}
+      <div style={{ margin: '0 20px 24px 20px' }}>
+        <FoodGuideSection />
       </div>
 
       <ChatBot budgetData={budgetData} exchangeRate={exchangeRate} />

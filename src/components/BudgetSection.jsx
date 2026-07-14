@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 export default function BudgetSection({ budgetData, setBudgetData, exchangeRate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [localBudget, setLocalBudget] = useState({ ...budgetData });
-  const [sarInput, setSarInput] = useState('');
-  const [egpInput, setEgpInput] = useState('');
 
   // Sync local edit state with parent budgetData when it changes
   useEffect(() => {
@@ -25,38 +23,6 @@ export default function BudgetSection({ budgetData, setBudgetData, exchangeRate 
     setBudgetData(localBudget);
     localStorage.setItem('cairo_budget_data', JSON.stringify(localBudget));
     setIsEditing(false);
-  };
-
-  // Currency Converter logic
-  const handleSarChange = (val) => {
-    setSarInput(val);
-    if (val === '') {
-      setEgpInput('');
-      return;
-    }
-    const num = parseFloat(val) || 0;
-    setEgpInput(Math.round(num * exchangeRate).toString());
-  };
-
-  const handleEgpChange = (val) => {
-    setEgpInput(val);
-    if (val === '') {
-      setSarInput('');
-      return;
-    }
-    const num = parseFloat(val) || 0;
-    setSarInput((Math.round((num / exchangeRate) * 10) / 10).toString());
-  };
-
-  const handleSwap = () => {
-    const tempSar = sarInput;
-    setSarInput(egpInput);
-    if (egpInput === '') {
-      setEgpInput('');
-    } else {
-      const num = parseFloat(egpInput) || 0;
-      setEgpInput(Math.round(num * exchangeRate).toString());
-    }
   };
 
   return (
@@ -142,57 +108,6 @@ export default function BudgetSection({ budgetData, setBudgetData, exchangeRate 
             </button>
           </div>
         )}
-      </div>
-
-      {/* Currency Converter Card */}
-      <div className="section-title">
-        <span>محول العملات التفاعلي</span>
-        <i className="hgi-stroke hgi-exchange-01"></i>
-      </div>
-      <div className="card">
-        <div className="converter-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>ريال سعودي (SAR)</span>
-              <input 
-                type="number" 
-                placeholder="0"
-                value={sarInput} 
-                onChange={(e) => handleSarChange(e.target.value)}
-                style={{ padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 'none', fontWeight: 800 }} 
-              />
-            </div>
-            
-            <button 
-              onClick={handleSwap} 
-              style={{ 
-                marginTop: '18px', 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '50%', 
-                border: '1px solid var(--border-color)', 
-                background: '#FFFFFF', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                color: 'var(--text-title)'
-              }}
-            >
-              <i className="hgi-stroke hgi-exchange-01" style={{ fontSize: '18px' }}></i>
-            </button>
-
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>جنيه مصري (EGP)</span>
-              <input 
-                type="number" 
-                placeholder="0"
-                value={egpInput} 
-                onChange={(e) => handleEgpChange(e.target.value)}
-                style={{ padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 'none', fontWeight: 800 }} 
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </>
   );
